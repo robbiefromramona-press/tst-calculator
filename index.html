@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TotalStationTech | Feet-Inches Field Calculator</title>
+<style>
+  :root{
+    --yellow-1:#ffd400;
+    --yellow-2:#ffc400;
+    --yellow-3:#f2b400;
+    --yellow-deep:#c98f00;
+    --black-1:#1a1a1a;
+    --black-2:#232323;
+    --black-3:#2e2e2e;
+    --lcd-bg-1:#c9d6b8;
+    --lcd-bg-2:#b9c9a5;
+    --lcd-ink:#0c1f0f;
+    --lcd-ink-dim:#3a4a35;
+    --danger:#c73e2b;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    min-height:100%;
+    background:
+      radial-gradient(circle at 20% -10%, #333 0%, #111 55%, #000 100%);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:28px 14px 60px;
+  }
+
+  .device{
+    width:100%;
+    max-width:480px;
+    background:
+      linear-gradient(160deg, var(--yellow-1) 0%, var(--yellow-2) 45%, var(--yellow-3) 78%, var(--yellow-deep) 100%);
+    border-radius:26px;
+    padding:18px 18px 24px;
+    box-shadow:
+      0 2px 0 rgba(255,255,255,.55) inset,
+      0 -10px 22px rgba(0,0,0,.28) inset,
+      0 22px 40px rgba(0,0,0,.55),
+      0 2px 0 rgba(0,0,0,.4);
+    position:relative;
+    border:2px solid #7a5a00;
+  }
+
+  .device::before{
+    content:"";
+    position:absolute;
+    inset:6px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.35);
+    pointer-events:none;
+  }
+
+  /* ---------- Header / badge ---------- */
+  .badge-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+    padding:0 4px;
+  }
+  .brand{
+    display:flex;
+    flex-direction:column;
+    line-height:1;
+  }
+  .brand .name{
+    font-weight:900;
+    font-size:15px;
+    letter-spacing:.5px;
+    color:var(--black-1);
+    text-shadow:0 1px 0 rgba(255,255,255,.4);
+  }
+  .brand .sub{
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:1.8px;
+    color:var(--black-2);
+    opacity:.72;
+    margin-top:2px;
+    text-transform:uppercase;
+  }
+  .field-badge{
+    background:var(--black-1);
+    color:var(--yellow-1);
+    font-size:9.5px;
+    font-weight:800;
+    letter-spacing:1.2px;
+    padding:5px 9px;
+    border-radius:6px;
+    box-shadow:0 2px 0 rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.15) inset;
+    transform:rotate(-2deg);
+    border:1px solid #000;
+    text-transform:uppercase;
+  }
+
+  /* ---------- LCD Screen ---------- */
+  .screen-housing{
+    background:linear-gradient(160deg,#3b3b3b,#151515 60%,#000);
+    border-radius:14px;
+    padding:10px;
+    box-shadow:
+      0 6px 14px rgba(0,0,0,.55) inset,
+      0 2px 0 rgba(255,255,255,.06);
+    margin-bottom:14px;
+    border:1px solid #000;
+  }
+
+  .lcd{
+    position:relative;
+    background:linear-gradient(155deg, var(--lcd-bg-1), var(--lcd-bg-2) 70%);
+    border-radius:8px;
+    padding:12px 12px 10px;
+    overflow:hidden;
+    box-shadow: 0 3px 6px rgba(0,0,0,.35) inset;
+  }
+
+  /* glossy glass overlay */
+  .lcd::before{
+    content:"";
+    position:absolute;
+    top:-40%; left:-20%;
+    width:140%; height:70%;
+    background:linear-gradient(120deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.14) 35%, rgba(255,255,255,0) 60%);
+    transform:rotate(-8deg);
+    pointer-events:none;
+  }
+  .lcd::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(180deg, rgba(0,0,0,.035) 0px, rgba(0,0,0,.035) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+    mix-blend-mode:multiply;
+    opacity:.5;
+  }
+
+  .lcd-row{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:5px 2px;
+  }
+  .lcd-label{
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--lcd-ink-dim);
+    min-width:64px;
+  }
+  .lcd-input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    text-align:right;
+    font-family:'Courier New', Consolas, monospace;
+    font-weight:700;
+    font-size:20px;
+    letter-spacing:1px;
+    color:var(--lcd-ink);
+    text-shadow:0 0 1px rgba(12,31,15,.3);
+    caret-color:var(--lcd-ink);
+    min-width:0;
+  }
+  .lcd-input::placeholder{
+    color:var(--lcd-ink-dim);
+    opacity:.55;
+    font-weight:500;
+  }
+  .lcd-divider{
+    height:1px;
+    background:rgba(12,31,15,.18);
+    margin:2px 4px;
+    position:relative;
+    z-index:2;
+  }
+
+  .lcd-sub{
+    position:relative;
+    z-index:2;
+    font-size:9px;
+    color:var(--lcd-ink-dim);
+    text-align:right;
+    padding:0 2px 2px;
+    letter-spacing:.5px;
+    min-height:11px;
+  }
+
+  /* ---------- section labels ---------- */
+  .section-title{
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:1.4px;
+    color:var(--black-1);
+    text-transform:uppercase;
+    margin:14px 4px 7px;
+    opacity:.75;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .section-title::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:rgba(0,0,0,.25);
+  }
+
+  /* ---------- Survey toggle strip ---------- */
+  .survey-strip{
+    background:var(--black-1);
+    border-radius:12px;
+    padding:10px 12px;
+    box-shadow:0 3px 0 rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.05) inset;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .survey-label{
+    color:var(--yellow-1);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.5px;
+  }
+  .toggle{
+    position:relative;
+    width:52px;
+    height:26px;
+    background:#111;
+    border-radius:14px;
+    border:1px solid #000;
+    cursor:pointer;
+    box-shadow:inset 0 2px 3px rgba(0,0,0,.6);
+    flex-shrink:0;
+  }
+  .toggle .knob{
+    position:absolute;
+    top:2px; left:2px;
+    width:20px;height:20px;
+    border-radius:50%;
+    background:linear-gradient(160deg,var(--yellow-1),var(--yellow-deep));
+    box-shadow:0 2px 3px rgba(0,0,0,.5);
+    transition:left .18s ease;
+  }
+  .toggle.on .knob{ left:28px; }
+  .toggle.on{ background:#3a3200; }
+
+  .survey-readout{
+    background:var(--black-1);
+    border-radius:12px;
+    padding:8px 12px 10px;
+    margin-bottom:4px;
+  }
+  .survey-readout .lcd{ padding:10px 12px 8px; }
+  .survey-note{
+    font-size:9.5px;
+    color:#8a8a8a;
+    padding:2px 4px 0;
+    line-height:1.4;
+  }
+
+  /* ---------- Calculator operand rows ---------- */
+  .calc-block{
+    background:var(--black-1);
+    border-radius:14px;
+    padding:12px;
+    box-shadow:0 3px 0 rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.05) inset;
+    margin-bottom:6px;
+  }
+
+  .op-row{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin:8px 0;
+  }
+  .op-btn{
+    width:44px;height:38px;
+    border-radius:9px;
+    border:none;
+    font-size:17px;
+    font-weight:800;
+    color:var(--yellow-1);
+    background:linear-gradient(160deg,#3a3a3a,#1a1a1a 65%,#0c0c0c);
+    box-shadow:
+      0 3px 0 #000,
+      0 4px 6px rgba(0,0,0,.5),
+      0 1px 0 rgba(255,255,255,.12) inset;
+    cursor:pointer;
+    transition:transform .05s ease, box-shadow .05s ease;
+  }
+  .op-btn:active{
+    transform:translateY(2px);
+    box-shadow:0 1px 0 #000, 0 1px 2px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.12) inset;
+  }
+  .op-btn.selected{
+    background:linear-gradient(160deg,var(--yellow-1),var(--yellow-deep));
+    color:var(--black-1);
+    box-shadow:0 3px 0 #7a5a00, 0 4px 8px rgba(0,0,0,.5) inset;
+  }
+
+  .equals-row{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  .btn-wide{
+    flex:1;
+    height:44px;
+    border-radius:10px;
+    border:none;
+    font-weight:900;
+    font-size:14px;
+    letter-spacing:1px;
+    cursor:pointer;
+    text-transform:uppercase;
+  }
+  .btn-equals{
+    background:linear-gradient(160deg,var(--yellow-1),var(--yellow-deep));
+    color:var(--black-1);
+    box-shadow:0 4px 0 #7a5a00, 0 6px 10px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.4) inset;
+  }
+  .btn-equals:active{ transform:translateY(3px); box-shadow:0 1px 0 #7a5a00, 0 2px 4px rgba(0,0,0,.5); }
+  .btn-clear{
+    background:linear-gradient(160deg,#4a4a4a,#222 70%,#111);
+    color:#eee;
+    box-shadow:0 4px 0 #000, 0 6px 10px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.1) inset;
+  }
+  .btn-clear:active{ transform:translateY(3px); box-shadow:0 1px 0 #000, 0 2px 4px rgba(0,0,0,.5); }
+
+  /* keypad for the focused field */
+  .keypad{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:7px;
+    margin-top:10px;
+  }
+  .key{
+    height:38px;
+    border-radius:9px;
+    border:none;
+    font-weight:800;
+    font-size:14px;
+    color:#f2f2f2;
+    background:linear-gradient(160deg,#4a4a4a,#242424 60%,#131313);
+    box-shadow:0 3px 0 #000, 0 4px 6px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.12) inset;
+    cursor:pointer;
+    transition:transform .05s ease, box-shadow .05s ease;
+  }
+  .key:active{
+    transform:translateY(2px);
+    box-shadow:0 1px 0 #000, 0 1px 2px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.1) inset;
+  }
+  .key.accent{
+    color:var(--black-1);
+    background:linear-gradient(160deg,var(--yellow-1),var(--yellow-deep));
+    box-shadow:0 3px 0 #7a5a00, 0 4px 6px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.4) inset;
+  }
+  .key.wide{ grid-column:span 2; }
+
+  .result-hint{
+    font-size:9.5px;
+    color:#8a8a8a;
+    text-align:center;
+    margin-top:8px;
+    letter-spacing:.4px;
+  }
+
+  .footer-note{
+    text-align:center;
+    font-size:9px;
+    color:rgba(0,0,0,.5);
+    letter-spacing:.6px;
+    margin-top:14px;
+    font-weight:700;
+    text-transform:uppercase;
+  }
+
+  @media (max-width:360px){
+    .keypad{ grid-template-columns:repeat(5,1fr); }
+    .lcd-input{ font-size:16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="device" id="device">
+
+  <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:11px;font-weight:800;letter-spacing:.5px;color:#1a1a1a;text-decoration:none;opacity:.75;">&larr; Back to TotalStationTech.com</a>
+
+  <div class="badge-row">
+    <div class="brand">
+      <span class="name">TotalStationTech</span>
+      <span class="sub">Field Calculator</span>
+    </div>
+    <div class="field-badge">FT · IN ⇄ DEC</div>
+  </div>
+
+  <!-- LIVE TWO-WAY CONVERTER -->
+  <div class="section-title">Live Converter</div>
+  <div class="screen-housing">
+    <div class="lcd">
+      <div class="lcd-row">
+        <span class="lcd-label">Ft &amp; In</span>
+        <input id="fracInput" class="lcd-input" type="text" inputmode="text"
+               placeholder="12' 6 3/8&quot;" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="lcd-divider"></div>
+      <div class="lcd-row">
+        <span class="lcd-label">Decimal Ft</span>
+        <input id="decInput" class="lcd-input" type="text" inputmode="decimal"
+               placeholder="12.53" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="lcd-sub" id="converterNote">precision: nearest 1/16"</div>
+    </div>
+  </div>
+
+  <!-- SURVEY FOOT TOGGLE -->
+  <div class="section-title">Survey Foot Conversion</div>
+  <div class="survey-strip">
+    <span class="survey-label" id="surveyDirLabel">Intl Ft → US Survey Ft</span>
+    <div class="toggle" id="surveyToggle"><div class="knob"></div></div>
+  </div>
+  <div class="survey-readout">
+    <div class="lcd">
+      <div class="lcd-row">
+        <span class="lcd-label" id="surveyInLabel">Intl Ft</span>
+        <input id="surveyInput" class="lcd-input" type="text" inputmode="decimal"
+               placeholder="0.00" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="lcd-divider"></div>
+      <div class="lcd-row">
+        <span class="lcd-label" id="surveyOutLabel">US Survey Ft</span>
+        <input id="surveyOutput" class="lcd-input" type="text" readonly placeholder="0.00">
+      </div>
+    </div>
+  </div>
+  <div class="survey-note">1 US survey ft ≈ 1.000002 international ft (ratio 3937:3936). Difference grows with distance — matters on long baselines.</div>
+
+  <!-- CALCULATOR -->
+  <div class="section-title">Calculator</div>
+  <div class="calc-block">
+    <div class="lcd">
+      <div class="lcd-row">
+        <span class="lcd-label">A</span>
+        <input id="opA" class="lcd-input" type="text" placeholder="12' 6&quot; or 12.5"
+               autocomplete="off" spellcheck="false">
+      </div>
+      <div class="lcd-divider"></div>
+      <div class="lcd-row">
+        <span class="lcd-label">B</span>
+        <input id="opB" class="lcd-input" type="text" placeholder="3 1/2&quot; or 3.5"
+               autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="op-row" id="opRow">
+      <button class="op-btn selected" data-op="+">+</button>
+      <button class="op-btn" data-op="-">−</button>
+      <button class="op-btn" data-op="*">×</button>
+      <button class="op-btn" data-op="/">÷</button>
+    </div>
+
+    <div class="equals-row">
+      <button class="btn-wide btn-clear" id="clearBtn">Clear</button>
+      <button class="btn-wide btn-equals" id="equalsBtn">= Calc</button>
+    </div>
+
+    <div class="screen-housing" style="margin-top:10px;">
+      <div class="lcd">
+        <div class="lcd-row">
+          <span class="lcd-label">Result Ft</span>
+          <input id="resultDec" class="lcd-input" type="text" readonly placeholder="—">
+        </div>
+        <div class="lcd-divider"></div>
+        <div class="lcd-row">
+          <span class="lcd-label">Result Ft·In</span>
+          <input id="resultFrac" class="lcd-input" type="text" readonly placeholder="—">
+        </div>
+      </div>
+    </div>
+
+    <div class="keypad" id="keypad">
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+      <button class="key" data-k="'">'</button>
+      <button class="key" data-k="&quot;">&quot;</button>
+
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key" data-k="/">/</button>
+      <button class="key" data-k="-back">⌫</button>
+
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key" data-k=".">.</button>
+      <button class="key" data-k="space"> </button>
+
+      <button class="key wide accent" data-k="0">0</button>
+      <button class="key accent" data-k="-clr">C</button>
+    </div>
+    <div class="result-hint">keypad types into the last field you tapped</div>
+  </div>
+
+  <div class="footer-note">Total Station Tech · Field Tools</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- core conversion helpers ---------------- */
+
+  // Parse a fractional feet-inches string like  12' 6 3/8"  ->  decimal feet (number|null)
+  function parseFeetInches(raw){
+    if (raw == null) return null;
+    let s = String(raw).trim();
+    if (s === '') return null;
+
+    let neg = false;
+    if (s[0] === '-'){ neg = true; s = s.slice(1); }
+
+    // normalize word forms
+    s = s.replace(/ft\.?/gi, "'").replace(/in(ch(es)?)?\.?/gi, '"');
+
+    let feet = 0;
+    let hasFeetMarker = false;
+    const feetMatch = s.match(/(\d+(?:\.\d+)?)\s*'/);
+    if (feetMatch){
+      feet = parseFloat(feetMatch[1]);
+      hasFeetMarker = true;
+      s = s.slice(0, feetMatch.index) + s.slice(feetMatch.index + feetMatch[0].length);
+    }
+
+    const hasQuote = s.indexOf('"') !== -1;
+    s = s.replace(/"/g, '');
+
+    let fracInches = 0;
+    let hasFrac = false;
+    const fracMatch = s.match(/(\d+)\s*\/\s*(\d+)/);
+    if (fracMatch){
+      const num = parseFloat(fracMatch[1]);
+      const den = parseFloat(fracMatch[2]);
+      if (den !== 0){
+        fracInches = num / den;
+        hasFrac = true;
+      }
+      s = s.slice(0, fracMatch.index) + s.slice(fracMatch.index + fracMatch[0].length);
+    }
+
+    s = s.trim();
+    let wholeInches = 0;
+    let leftoverNum = null;
+    const wholeMatch = s.match(/\d+(?:\.\d+)?/);
+    if (wholeMatch){
+      leftoverNum = parseFloat(wholeMatch[0]);
+    }
+
+    let decimalFeet;
+    if (hasFeetMarker || hasQuote || hasFrac){
+      // any leftover bare number belongs to inches
+      wholeInches = leftoverNum != null ? leftoverNum : 0;
+      const totalInches = wholeInches + fracInches;
+      decimalFeet = feet + totalInches / 12;
+    } else if (leftoverNum != null) {
+      // no markers at all -> treat the bare number as feet
+      decimalFeet = leftoverNum;
+    } else if (hasFeetMarker) {
+      decimalFeet = feet;
+    } else {
+      return null;
+    }
+
+    if (isNaN(decimalFeet)) return null;
+    if (neg) decimalFeet = -decimalFeet;
+    return decimalFeet;
+  }
+
+  function gcd(a,b){ return b ? gcd(b, a % b) : a; }
+
+  // decimal feet -> fractional feet-inches string, nearest 1/denom inch
+  function decimalToFeetInches(decimalFeet, denom){
+    denom = denom || 16;
+    if (decimalFeet == null || isNaN(decimalFeet)) return '';
+    const neg = decimalFeet < 0;
+    let val = Math.abs(decimalFeet);
+
+    let feet = Math.floor(val + 1e-9);
+    let remFeet = val - feet;
+    let inchesFloat = remFeet * 12;
+
+    let wholeInches = Math.floor(inchesFloat + 1e-9);
+    let fracFloat = inchesFloat - wholeInches;
+    let numerator = Math.round(fracFloat * denom);
+    let denominator = denom;
+
+    if (numerator >= denom){
+      numerator = 0;
+      wholeInches += 1;
+    }
+    if (wholeInches >= 12){
+      wholeInches -= 12;
+      feet += 1;
+    }
+    if (numerator > 0){
+      const g = gcd(numerator, denominator);
+      numerator = numerator / g;
+      denominator = denominator / g;
+    }
+
+    let str = (neg ? '-' : '') + feet + "' ";
+    if (numerator > 0){
+      str += wholeInches + ' ' + numerator + '/' + denominator + '"';
+    } else {
+      str += wholeInches + '"';
+    }
+    return str;
+  }
+
+  function formatDecimal(n){
+    if (n == null || isNaN(n)) return '';
+    let r = Math.round(n * 100000) / 100000;
+    return String(r);
+  }
+
+  // Detect + parse either format for calculator operands
+  function parseAny(raw){
+    if (raw == null) return null;
+    const s = String(raw).trim();
+    if (s === '') return null;
+    if (/['"\/]/.test(s) || /\b(ft|in)\b/i.test(s)){
+      return parseFeetInches(s);
+    }
+    const n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  }
+
+  /* ---------------- live two-way converter ---------------- */
+
+  const fracInput = document.getElementById('fracInput');
+  const decInput  = document.getElementById('decInput');
+  let lastEdited = null;
+
+  function syncFromFrac(){
+    const val = parseFeetInches(fracInput.value);
+    if (val != null){
+      decInput.value = formatDecimal(val);
+    } else if (fracInput.value.trim() === ''){
+      decInput.value = '';
+    }
+  }
+  function syncFromDec(){
+    const s = decInput.value.trim();
+    if (s === ''){ fracInput.value = ''; return; }
+    const n = parseFloat(s);
+    if (!isNaN(n)){
+      fracInput.value = decimalToFeetInches(n, 16);
+    }
+  }
+
+  fracInput.addEventListener('input', function(){ lastEdited='frac'; syncFromFrac(); });
+  decInput.addEventListener('input', function(){ lastEdited='dec'; syncFromDec(); });
+
+  // seed with an example
+  fracInput.value = "12' 6 3/8\"";
+  syncFromFrac();
+
+  /* ---------------- survey foot toggle ---------------- */
+
+  const SURVEY_PER_INTL = 0.3048 / (1200/3937); // survey ft per 1 intl ft  (~0.999998)
+  const surveyToggle = document.getElementById('surveyToggle');
+  const surveyInput  = document.getElementById('surveyInput');
+  const surveyOutput = document.getElementById('surveyOutput');
+  const surveyInLabel  = document.getElementById('surveyInLabel');
+  const surveyOutLabel = document.getElementById('surveyOutLabel');
+  const surveyDirLabel = document.getElementById('surveyDirLabel');
+
+  let toIntlToSurvey = true; // true: input=intl -> output=survey
+
+  function refreshSurveyLabels(){
+    if (toIntlToSurvey){
+      surveyInLabel.textContent = 'Intl Ft';
+      surveyOutLabel.textContent = 'US Survey Ft';
+      surveyDirLabel.textContent = 'Intl Ft → US Survey Ft';
+    } else {
+      surveyInLabel.textContent = 'US Survey Ft';
+      surveyOutLabel.textContent = 'Intl Ft';
+      surveyDirLabel.textContent = 'US Survey Ft → Intl Ft';
+    }
+  }
+
+  function refreshSurveyOutput(){
+    const n = parseFloat(surveyInput.value);
+    if (isNaN(n)){ surveyOutput.value = ''; return; }
+    const out = toIntlToSurvey ? n * SURVEY_PER_INTL : n / SURVEY_PER_INTL;
+    surveyOutput.value = formatDecimal(out);
+  }
+
+  surveyToggle.addEventListener('click', function(){
+    toIntlToSurvey = !toIntlToSurvey;
+    surveyToggle.classList.toggle('on', !toIntlToSurvey);
+    refreshSurveyLabels();
+    refreshSurveyOutput();
+  });
+  surveyInput.addEventListener('input', refreshSurveyOutput);
+  refreshSurveyLabels();
+
+  /* ---------------- calculator ---------------- */
+
+  const opA = document.getElementById('opA');
+  const opB = document.getElementById('opB');
+  const resultDec = document.getElementById('resultDec');
+  const resultFrac = document.getElementById('resultFrac');
+  const opRow = document.getElementById('opRow');
+  let currentOp = '+';
+
+  opRow.addEventListener('click', function(e){
+    const btn = e.target.closest('.op-btn');
+    if (!btn) return;
+    opRow.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentOp = btn.dataset.op;
+  });
+
+  function runCalc(){
+    const a = parseAny(opA.value);
+    const b = parseAny(opB.value);
+    if (a == null || b == null){
+      resultDec.value = '—';
+      resultFrac.value = 'check inputs';
+      return;
+    }
+    let r;
+    switch(currentOp){
+      case '+': r = a + b; break;
+      case '-': r = a - b; break;
+      case '*': r = a * b; break;
+      case '/':
+        if (b === 0){ resultDec.value = '—'; resultFrac.value = 'div/0'; return; }
+        r = a / b; break;
+      default: r = a;
+    }
+    resultDec.value = formatDecimal(r) + ' ft';
+    resultFrac.value = decimalToFeetInches(r, 16);
+  }
+
+  document.getElementById('equalsBtn').addEventListener('click', runCalc);
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    opA.value = ''; opB.value = '';
+    resultDec.value = ''; resultFrac.value = '';
+  });
+
+  /* ---------------- tactile keypad -> last focused field ---------------- */
+
+  let activeField = opA;
+  [fracInput, decInput, surveyInput, opA, opB].forEach(f=>{
+    f.addEventListener('focus', ()=>{ activeField = f; });
+  });
+
+  document.getElementById('keypad').addEventListener('click', function(e){
+    const btn = e.target.closest('.key');
+    if (!btn) return;
+    const k = btn.dataset.k;
+    if (!activeField) return;
+
+    if (k === '-clr'){
+      activeField.value = '';
+    } else if (k === '-back'){
+      activeField.value = activeField.value.slice(0, -1);
+    } else if (k === 'space'){
+      activeField.value += ' ';
+    } else {
+      activeField.value += k;
+    }
+
+    // fire the appropriate live-update handler
+    if (activeField === fracInput){ lastEdited='frac'; syncFromFrac(); }
+    else if (activeField === decInput){ lastEdited='dec'; syncFromDec(); }
+    else if (activeField === surveyInput){ refreshSurveyOutput(); }
+
+    activeField.focus();
+  });
+
+})();
+</script>
+</body>
+</html>
