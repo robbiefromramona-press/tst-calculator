@@ -25,19 +25,32 @@
   html,body{
     margin:0;
     padding:0;
+    width:100%;
+    max-width:100%;
     min-height:100%;
+    /* safety net: nothing may ever push the page sideways */
+    overflow-x:hidden;
     background:
       radial-gradient(circle at 20% -10%, #333 0%, #111 55%, #000 100%);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    display:flex;
-    align-items:flex-start;
-    justify-content:center;
+  }
+
+  /* Block layout + auto margins, not flex: a flex item cannot shrink below its
+     min-content width, and the LCD <input>s have a wide intrinsic width, which
+     used to force the card past the viewport on phones. Safe-area insets keep
+     the yellow border clear of notches and home indicators. */
+  body{
     padding:28px 14px 60px;
+    padding-top:max(28px, env(safe-area-inset-top));
+    padding-right:max(14px, env(safe-area-inset-right));
+    padding-bottom:max(60px, calc(40px + env(safe-area-inset-bottom)));
+    padding-left:max(14px, env(safe-area-inset-left));
   }
 
   .device{
     width:100%;
     max-width:480px;
+    margin:0 auto;
     background:
       linear-gradient(160deg, var(--yellow-1) 0%, var(--yellow-2) 45%, var(--yellow-3) 78%, var(--yellow-deep) 100%);
     border-radius:26px;
@@ -174,6 +187,8 @@
     color:var(--lcd-ink);
     text-shadow:0 0 1px rgba(12,31,15,.3);
     caret-color:var(--lcd-ink);
+    /* width:0 + flex-grow keeps the input's intrinsic size out of layout math */
+    width:0;
     min-width:0;
   }
   .lcd-input::placeholder{
@@ -219,6 +234,124 @@
     height:1px;
     background:rgba(0,0,0,.25);
   }
+
+  /* one-sentence, always-visible description under each section header */
+  .section-desc{
+    margin:-2px 4px 8px;
+    font-size:10.5px;
+    line-height:1.45;
+    font-weight:600;
+    letter-spacing:.2px;
+    color:rgba(0,0,0,.62);
+  }
+
+  /* "?" button that opens the long-form explanation */
+  .help-btn{
+    flex:0 0 auto;
+    width:18px;
+    height:18px;
+    padding:0;
+    border:1px solid rgba(0,0,0,.45);
+    border-radius:50%;
+    background:linear-gradient(160deg,#3a3a3a,#1a1a1a 65%,#0c0c0c);
+    color:var(--yellow-1);
+    font-size:11px;
+    font-weight:900;
+    line-height:1;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 1px 2px rgba(0,0,0,.45);
+  }
+  .help-btn:active{ transform:translateY(1px); }
+
+  /* ---------- Help modal ---------- */
+  .help-overlay{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    background:rgba(0,0,0,.74);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
+  }
+  .help-overlay[hidden]{ display:none; }
+  .help-card{
+    width:100%;
+    max-width:420px;
+    max-height:100%;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:2px solid #7a5a00;
+    border-radius:18px;
+    background:linear-gradient(160deg, var(--yellow-1) 0%, var(--yellow-2) 45%, var(--yellow-3) 100%);
+    box-shadow:0 22px 44px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.5) inset;
+  }
+  .help-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:11px 11px 11px 14px;
+    background:var(--black-1);
+    color:var(--yellow-1);
+    font-size:11.5px;
+    font-weight:900;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+  }
+  .help-close{
+    flex:0 0 auto;
+    width:30px;
+    height:30px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(160deg,#4a4a4a,#242424 60%,#131313);
+    color:#f2f2f2;
+    font-size:18px;
+    font-weight:800;
+    line-height:1;
+    cursor:pointer;
+    box-shadow:0 2px 0 #000, 0 1px 0 rgba(255,255,255,.12) inset;
+  }
+  .help-close:active{ transform:translateY(2px); box-shadow:0 1px 0 #000; }
+  .help-body{
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:14px;
+    background:linear-gradient(155deg, var(--lcd-bg-1), var(--lcd-bg-2) 70%);
+    color:var(--lcd-ink);
+    font-size:12.5px;
+    line-height:1.55;
+  }
+  .help-body p{ margin:0 0 10px; }
+  .help-body p:last-child{ margin-bottom:0; }
+  .help-body h4{
+    margin:14px 0 6px;
+    font-size:9.5px;
+    font-weight:900;
+    letter-spacing:1.3px;
+    text-transform:uppercase;
+    color:var(--lcd-ink-dim);
+  }
+  .help-body ul{ margin:0 0 10px; padding-left:17px; }
+  .help-body li{ margin:0 0 5px; }
+  .help-body code{
+    font-family:'Courier New', Consolas, monospace;
+    font-weight:700;
+    background:rgba(12,31,15,.10);
+    border-radius:3px;
+    padding:1px 4px;
+    white-space:nowrap;
+  }
+  body.help-open{ overflow:hidden; }
 
   /* ---------- Survey toggle strip ---------- */
   .survey-strip{
@@ -392,9 +525,14 @@
     text-transform:uppercase;
   }
 
-  @media (max-width:360px){
-    .keypad{ grid-template-columns:repeat(5,1fr); }
-    .lcd-input{ font-size:16px; }
+  @media (max-width:380px){
+    .device{ padding:14px 12px 20px; border-radius:20px; }
+    .lcd-input{ font-size:17px; }
+  }
+  @media (max-width:340px){
+    .lcd-input{ font-size:15px; }
+    .lcd-label{ min-width:54px; font-size:8.5px; }
+    .op-btn{ width:40px; }
   }
 </style>
 </head>
@@ -413,7 +551,11 @@
   </div>
 
   <!-- LIVE TWO-WAY CONVERTER -->
-  <div class="section-title">Live Converter</div>
+  <div class="section-title">Live Converter
+    <button type="button" class="help-btn" data-help="live"
+            aria-label="How the Live Converter works">?</button>
+  </div>
+  <p class="section-desc">Turns a feet-and-inches measurement into decimal feet as you type &mdash; and back again.</p>
   <div class="screen-housing">
     <div class="lcd">
       <div class="lcd-row">
@@ -432,7 +574,11 @@
   </div>
 
   <!-- SURVEY FOOT TOGGLE -->
-  <div class="section-title">Survey Foot Conversion</div>
+  <div class="section-title">Survey Foot Conversion
+    <button type="button" class="help-btn" data-help="survey"
+            aria-label="How Survey Foot Conversion works">?</button>
+  </div>
+  <p class="section-desc">Converts a distance between international feet and US survey feet, which are two slightly different sizes of foot.</p>
   <div class="survey-strip">
     <span class="survey-label" id="surveyDirLabel">Intl Ft → US Survey Ft</span>
     <div class="toggle" id="surveyToggle"><div class="knob"></div></div>
@@ -454,18 +600,22 @@
   <div class="survey-note">1 US survey ft ≈ 1.000002 international ft (ratio 3937:3936). Difference grows with distance — matters on long baselines.</div>
 
   <!-- CALCULATOR -->
-  <div class="section-title">Calculator</div>
+  <div class="section-title">Calculator
+    <button type="button" class="help-btn" data-help="calc"
+            aria-label="How the Calculator works">?</button>
+  </div>
+  <p class="section-desc">Adds, subtracts, multiplies or divides two measurements and shows the answer in both decimal feet and feet-and-inches.</p>
   <div class="calc-block">
     <div class="lcd">
       <div class="lcd-row">
         <span class="lcd-label">A</span>
-        <input id="opA" class="lcd-input" type="text" placeholder="12' 6&quot; or 12.5"
+        <input id="opA" class="lcd-input" type="text" placeholder="12' 6&quot; or 12.5 ft"
                autocomplete="off" spellcheck="false">
       </div>
       <div class="lcd-divider"></div>
       <div class="lcd-row">
         <span class="lcd-label">B</span>
-        <input id="opB" class="lcd-input" type="text" placeholder="3 1/2&quot; or 3.5"
+        <input id="opB" class="lcd-input" type="text" placeholder="3 1/2&quot; or 0.5 ft"
                autocomplete="off" spellcheck="false">
       </div>
     </div>
@@ -524,14 +674,38 @@
   <div class="footer-note">Total Station Tech · Field Tools</div>
 </div>
 
+<!-- shared help modal: filled in from the HELP table for whichever "?" was tapped -->
+<div class="help-overlay" id="helpOverlay" hidden>
+  <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-head">
+      <span id="helpTitle"></span>
+      <button type="button" class="help-close" id="helpClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="help-body" id="helpBody"></div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
 
   /* ---------------- core conversion helpers ---------------- */
 
-  // Parse a fractional feet-inches string like  12' 6 3/8"  ->  decimal feet (number|null)
-  function parseFeetInches(raw){
+  // Single source of truth for precision, app-wide: nearest 1/16".
+  const PRECISION_DENOM = 16;
+
+  // Inches -> decimal feet, snapped to the app-wide precision rule.
+  // Survey convention: decimals belong to feet, never to inches. Anything that
+  // lands in an inches position therefore comes back out as decimal feet.
+  function inchesToDecimalFeet(inches){
+    if (inches == null || isNaN(inches)) return 0;
+    const snapped = Math.round(inches * PRECISION_DENOM) / PRECISION_DENOM;
+    return snapped / 12;
+  }
+
+  // Parse a fractional feet-inches string like  12' 6 3/8"
+  // -> { feet:<decimal feet>, hadDecimalInches:<bool> }  |  null
+  function parseMeasurement(raw){
     if (raw == null) return null;
     let s = String(raw).trim();
     if (s === '') return null;
@@ -568,38 +742,44 @@
     }
 
     s = s.trim();
-    let wholeInches = 0;
     let leftoverNum = null;
+    let leftoverIsDecimal = false;
     const wholeMatch = s.match(/\d+(?:\.\d+)?/);
     if (wholeMatch){
       leftoverNum = parseFloat(wholeMatch[0]);
+      leftoverIsDecimal = wholeMatch[0].indexOf('.') !== -1;
     }
 
     let decimalFeet;
+    let hadDecimalInches = false;
     if (hasFeetMarker || hasQuote || hasFrac){
-      // any leftover bare number belongs to inches
-      wholeInches = leftoverNum != null ? leftoverNum : 0;
-      const totalInches = wholeInches + fracInches;
-      decimalFeet = feet + totalInches / 12;
+      // any leftover bare number belongs to inches, and inches are never decimal
+      const wholeInches = leftoverNum != null ? leftoverNum : 0;
+      hadDecimalInches = leftoverIsDecimal;
+      decimalFeet = feet + inchesToDecimalFeet(wholeInches + fracInches);
     } else if (leftoverNum != null) {
       // no markers at all -> treat the bare number as feet
       decimalFeet = leftoverNum;
-    } else if (hasFeetMarker) {
-      decimalFeet = feet;
     } else {
       return null;
     }
 
     if (isNaN(decimalFeet)) return null;
     if (neg) decimalFeet = -decimalFeet;
-    return decimalFeet;
+    return { feet: decimalFeet, hadDecimalInches: hadDecimalInches };
+  }
+
+  // decimal feet (number|null), for callers that only need the value
+  function parseFeetInches(raw){
+    const m = parseMeasurement(raw);
+    return m ? m.feet : null;
   }
 
   function gcd(a,b){ return b ? gcd(b, a % b) : a; }
 
   // decimal feet -> fractional feet-inches string, nearest 1/denom inch
   function decimalToFeetInches(decimalFeet, denom){
-    denom = denom || 16;
+    denom = denom || PRECISION_DENOM;
     if (decimalFeet == null || isNaN(decimalFeet)) return '';
     const neg = decimalFeet < 0;
     let val = Math.abs(decimalFeet);
@@ -642,16 +822,44 @@
     return String(r);
   }
 
-  // Detect + parse either format for calculator operands
-  function parseAny(raw){
+  // Detect + parse either format for any field that accepts inches
+  function parseMeasurementAny(raw){
     if (raw == null) return null;
     const s = String(raw).trim();
     if (s === '') return null;
     if (/['"\/]/.test(s) || /\b(ft|in)\b/i.test(s)){
-      return parseFeetInches(s);
+      return parseMeasurement(s);
     }
     const n = parseFloat(s);
-    return isNaN(n) ? null : n;
+    // no inches marker at all, so a bare number is already decimal feet
+    return isNaN(n) ? null : { feet: n, hadDecimalInches: false };
+  }
+
+  function parseAny(raw){
+    const m = parseMeasurementAny(raw);
+    return m ? m.feet : null;
+  }
+
+  // Quietly rewrite an inches-accepting field that was handed decimal inches so
+  // it holds the equivalent decimal feet instead. No error, no fraction --
+  // just the value moved into the unit decimals are actually allowed in.
+  function normalizeInchesField(field, after){
+    const m = parseMeasurementAny(field.value);
+    if (!m || !m.hadDecimalInches) return false;
+    field.value = formatDecimal(m.feet);
+    if (after) after();
+    return true;
+  }
+
+  // Normalize only once the user has really left the field. The deferred check
+  // skips the blur/refocus bounce the on-screen keypad causes mid-entry.
+  function watchInchesField(field, after){
+    field.addEventListener('blur', function(){
+      setTimeout(function(){
+        if (document.activeElement === field) return;
+        normalizeInchesField(field, after);
+      }, 0);
+    });
   }
 
   /* ---------------- live two-way converter ---------------- */
@@ -673,7 +881,7 @@
     if (s === ''){ fracInput.value = ''; return; }
     const n = parseFloat(s);
     if (!isNaN(n)){
-      fracInput.value = decimalToFeetInches(n, 16);
+      fracInput.value = decimalToFeetInches(n);
     }
   }
 
@@ -683,6 +891,10 @@
   // seed with an example
   fracInput.value = "12' 6 3/8\"";
   syncFromFrac();
+
+  // Ft & In accepts inches, so it gets the decimal-inches correction.
+  // Decimal Ft is feet-only, so it is left alone.
+  watchInchesField(fracInput, syncFromFrac);
 
   /* ---------------- survey foot toggle ---------------- */
 
@@ -733,6 +945,10 @@
   const opRow = document.getElementById('opRow');
   let currentOp = '+';
 
+  // A and B both accept inches
+  watchInchesField(opA);
+  watchInchesField(opB);
+
   opRow.addEventListener('click', function(e){
     const btn = e.target.closest('.op-btn');
     if (!btn) return;
@@ -742,6 +958,10 @@
   });
 
   function runCalc(){
+    // decimal inches become decimal feet before anything is calculated, so the
+    // operands and both result readouts all agree on the unit
+    normalizeInchesField(opA);
+    normalizeInchesField(opB);
     const a = parseAny(opA.value);
     const b = parseAny(opB.value);
     if (a == null || b == null){
@@ -760,7 +980,7 @@
       default: r = a;
     }
     resultDec.value = formatDecimal(r) + ' ft';
-    resultFrac.value = decimalToFeetInches(r, 16);
+    resultFrac.value = decimalToFeetInches(r);
   }
 
   document.getElementById('equalsBtn').addEventListener('click', runCalc);
@@ -798,6 +1018,149 @@
     else if (activeField === surveyInput){ refreshSurveyOutput(); }
 
     activeField.focus();
+  });
+
+  /* ---------------- contextual help ---------------- */
+
+  // Long-form explanation for each section, keyed by the "?" button's
+  // data-help value. Add a section, add an entry here -- the button wiring
+  // below is delegated, so new sections pick it up with no extra code.
+  const HELP = {
+    live: {
+      title: 'Live Converter',
+      body: `
+        <p>Out on site you write a measurement the way you would say it out loud:
+        <code>12' 6 3/8"</code> &mdash; twelve feet, six and three-eighths inches. But
+        total stations, data collectors and spreadsheets want that same distance as
+        one plain number: <code>12.53125</code> feet. Same length, different way of
+        writing it down.</p>
+        <p>This section swaps between the two while you type. Change either box and
+        the other one keeps up.</p>
+        <h4>What to type</h4>
+        <ul>
+          <li><strong>Ft &amp; In</strong> &mdash; feet first with a <code>'</code>, then
+          inches with a <code>"</code>. Example: <code>12' 6 3/8"</code>. Inches on their
+          own are fine too: <code>6 3/8"</code>.</li>
+          <li><strong>Decimal Ft</strong> &mdash; one plain number, like
+          <code>12.53125</code>. It is always feet, so there is no mark to add.</li>
+        </ul>
+        <h4>About inches</h4>
+        <p>Inches are always whole numbers or fractions &mdash; <code>3</code>,
+        <code>3 1/2</code>, <code>3 3/8</code>. They are never decimals. If you type
+        something like <code>3.5"</code>, the calculator quietly turns it into feet for
+        you (3.5 &divide; 12 = <code>0.29167</code> ft) and carries on. No warning,
+        nothing for you to fix.</p>
+        <p>Answers in feet and inches are rounded to the nearest 1/16 of an inch.</p>
+      `
+    },
+    survey: {
+      title: 'Survey Foot Conversion',
+      body: `
+        <p>A foot is not defined the same way everywhere in the US. Two versions are
+        still floating around in survey data:</p>
+        <ul>
+          <li><strong>International foot</strong> &mdash; exactly 0.3048 meters. This is
+          the modern, everyday foot.</li>
+          <li><strong>US survey foot</strong> &mdash; a hair longer, 1200/3937 of a
+          meter. It is the older definition, and plenty of state and county records
+          were made with it.</li>
+        </ul>
+        <h4>Why such a tiny difference matters</h4>
+        <p>The gap is about 2 parts per million. Across 100 feet that is around a
+        thousandth of an inch &mdash; nothing at all. But the error grows right along
+        with the distance. Across 100,000 feet it is about 0.2 feet, and state plane
+        coordinates routinely run into the millions of feet, where the two definitions
+        disagree by a couple of feet. That is plenty to set a point in the wrong
+        spot.</p>
+        <p>So before you mix data from two sources, check which foot each one uses and
+        convert if they do not match.</p>
+        <h4>What to enter</h4>
+        <p>One plain decimal number of feet, like <code>1250.75</code>. This section is
+        feet only &mdash; no inches here. Tap the switch to flip the direction; the
+        label always tells you which way it is converting.</p>
+      `
+    },
+    calc: {
+      title: 'Calculator',
+      body: `
+        <p>Put one measurement in box <strong>A</strong> and another in box
+        <strong>B</strong>, pick an operator, then tap <strong>= Calc</strong>.</p>
+        <h4>How to type a measurement</h4>
+        <p>Either style works, and you can mix them between A and B:</p>
+        <ul>
+          <li>Feet and inches: <code>12' 6"</code> or <code>12' 6 3/8"</code></li>
+          <li>Plain decimal feet: <code>12.5</code></li>
+        </ul>
+        <h4>One rule about inches</h4>
+        <p>Inches are always whole numbers or fractions &mdash; <code>3</code>,
+        <code>3 1/2</code>, <code>3 3/8</code>. Decimals belong to feet, not to inches;
+        nobody on a crew writes <code>3.5"</code>. If you do type a decimal where inches
+        go, the calculator quietly converts it to feet instead
+        (3.5 &divide; 12 = <code>0.29167</code> ft) and uses that. You will see the box
+        correct itself. No error message, nothing to undo.</p>
+        <h4>What the operator buttons do</h4>
+        <ul>
+          <li><code>+</code> adds A and B together.</li>
+          <li><code>&minus;</code> subtracts B from A.</li>
+          <li><code>&times;</code> multiplies A by B &mdash; handy for scaling a
+          measurement up or down.</li>
+          <li><code>&divide;</code> divides A by B &mdash; handy for splitting a run into
+          equal spaces.</li>
+        </ul>
+        <h4>Your two answers</h4>
+        <ul>
+          <li><strong>Result Ft</strong> is the answer in decimal feet &mdash; the form
+          your data collector, CAD file or spreadsheet wants.</li>
+          <li><strong>Result Ft&middot;In</strong> is the same answer written the way you
+          would call it out on site, like <code>16' 0 3/8"</code>, rounded to the nearest
+          1/16 inch. Inches here are always whole or fractional, never decimal.</li>
+        </ul>
+        <h4>The keypad</h4>
+        <p>It types into whichever box you tapped last. <code>&#9003;</code> deletes one
+        character, <code>C</code> empties that one box, and <strong>Clear</strong> wipes
+        both boxes and both answers.</p>
+      `
+    }
+  };
+
+  const helpOverlay = document.getElementById('helpOverlay');
+  const helpTitle   = document.getElementById('helpTitle');
+  const helpBody    = document.getElementById('helpBody');
+  const helpClose   = document.getElementById('helpClose');
+  let helpTrigger = null;
+
+  function openHelp(key, trigger){
+    const entry = HELP[key];
+    if (!entry) return;
+    helpTitle.textContent = entry.title;
+    helpBody.innerHTML = entry.body;
+    helpBody.scrollTop = 0;
+    helpOverlay.hidden = false;
+    document.body.classList.add('help-open');
+    helpTrigger = trigger || null;
+    helpClose.focus({ preventScroll: true });
+  }
+
+  function closeHelp(){
+    if (helpOverlay.hidden) return;
+    helpOverlay.hidden = true;
+    document.body.classList.remove('help-open');
+    if (helpTrigger) helpTrigger.focus({ preventScroll: true });
+    helpTrigger = null;
+  }
+
+  // delegated so any "?" added to a future section works automatically
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.help-btn');
+    if (btn) openHelp(btn.dataset.help, btn);
+  });
+
+  // dismiss: tap the backdrop, tap the close button, or press Escape
+  helpOverlay.addEventListener('click', function(e){
+    if (e.target === helpOverlay || e.target.closest('.help-close')) closeHelp();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeHelp();
   });
 
 })();
