@@ -525,6 +525,26 @@
     text-transform:uppercase;
   }
 
+  /* Consent gate. Reuses the help-overlay chrome so it matches the device. */
+  .consent-body p{ margin:0 0 10px; font-size:12px; line-height:1.55; }
+  .consent-body p.warn{ font-weight:700; }
+  .consent-check{ display:flex; gap:9px; align-items:flex-start; font-size:12px; line-height:1.45; cursor:pointer; margin-bottom:12px; }
+  .consent-check input{ margin:1px 0 0; width:16px; height:16px; flex:none; cursor:pointer; }
+  .consent-go{
+    width:100%; border:none; border-radius:10px; padding:11px;
+    font-size:12.5px; font-weight:900; letter-spacing:.8px; text-transform:uppercase;
+    cursor:pointer; color:#1a1a1a;
+    background:linear-gradient(160deg,var(--yellow-1),var(--yellow-deep));
+    box-shadow:0 3px 0 #7a5a00, 0 4px 6px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.4) inset;
+  }
+  .consent-go:disabled{ opacity:.45; cursor:not-allowed; box-shadow:0 2px 0 #7a5a00; }
+  .consent-go:not(:disabled):active{ transform:translateY(2px); box-shadow:0 1px 0 #7a5a00; }
+  .legal-note{
+    text-align:center; font-size:9px; color:rgba(0,0,0,.5); letter-spacing:.4px;
+    margin-top:6px; font-weight:700; line-height:1.7;
+  }
+  .legal-note a{ color:rgba(0,0,0,.62); }
+
   @media (max-width:380px){
     .device{ padding:14px 12px 20px; border-radius:20px; }
     .lcd-input{ font-size:17px; }
@@ -540,7 +560,7 @@
 
 <div class="device" id="device">
 
-  <a href="index.html" style="display:inline-block;margin-bottom:10px;font-size:11px;font-weight:800;letter-spacing:.5px;color:#1a1a1a;text-decoration:none;opacity:.75;">&larr; Back to TotalStationTech.com</a>
+  <a href="https://totalstationtech.com" style="display:inline-block;margin-bottom:10px;font-size:11px;font-weight:800;letter-spacing:.5px;color:#1a1a1a;text-decoration:none;opacity:.75;">&larr; Back to TotalStationTech.com</a>
 
   <div class="badge-row">
     <div class="brand">
@@ -672,9 +692,31 @@
   </div>
 
   <div class="footer-note">Total Station Tech · Field Tools</div>
+  <div class="legal-note">
+    <a href="https://totalstationtech.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> &middot;
+    <a href="https://totalstationtech.com/terms.html" target="_blank" rel="noopener">Terms of Service</a><br>
+    Always verify results before using them for field layout or construction.
+  </div>
 </div>
 
 <!-- shared help modal: filled in from the HELP table for whichever "?" was tapped -->
+<div class="help-overlay" id="consentOverlay" hidden>
+  <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
+    <div class="help-head"><span id="consentTitle">Before you use this calculator</span></div>
+    <div class="help-body consent-body">
+      <p>This calculator runs entirely on your device. Nothing you type is sent to us or stored on our servers.</p>
+      <p class="warn">Results — conversions, survey-foot values and calculated measurements — must be independently verified by a qualified professional before being used for actual field layout, staking or construction.</p>
+      <label class="consent-check" for="consentCheck">
+        <input type="checkbox" id="consentCheck">
+        <span>I understand results must be verified before field use, and I agree to the
+          <a href="https://totalstationtech.com/terms.html" target="_blank" rel="noopener">Terms of Service</a> and
+          <a href="https://totalstationtech.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+      </label>
+      <button type="button" class="consent-go" id="consentGo" disabled>Start calculating</button>
+    </div>
+  </div>
+</div>
+
 <div class="help-overlay" id="helpOverlay" hidden>
   <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="help-head">
@@ -688,6 +730,31 @@
 <script>
 (function(){
   "use strict";
+
+  /* ---------------- consent gate ----------------
+     Shown once per browser session rather than on every load: this is a
+     one-handed field tool, and re-asking at every glance would be its own
+     nuisance. sessionStorage means a new session asks again. */
+  var consentOverlay = document.getElementById('consentOverlay');
+  var consentCheck   = document.getElementById('consentCheck');
+  var consentGo      = document.getElementById('consentGo');
+  var CONSENT_KEY    = 'tst-calc-consent';
+
+  function alreadyConsented(){
+    try { return sessionStorage.getItem(CONSENT_KEY) === '1'; } catch (e) { return false; }
+  }
+
+  if (!alreadyConsented()) {
+    consentOverlay.hidden = false;
+    consentCheck.addEventListener('change', function(){
+      consentGo.disabled = !consentCheck.checked;
+    });
+    consentGo.addEventListener('click', function(){
+      if (!consentCheck.checked) return;
+      try { sessionStorage.setItem(CONSENT_KEY, '1'); } catch (e) { /* private mode: ask again next load */ }
+      consentOverlay.hidden = true;
+    });
+  }
 
   /* ---------------- core conversion helpers ---------------- */
 
