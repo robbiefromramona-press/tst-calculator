@@ -1,0 +1,33 @@
+# Added 2026-09-25 by the repo audit (see ../AUDIT-REPORT.md).
+#
+# This repo previously had no netlify.toml, which means the deploy settings
+# live in the Netlify UI. That is deliberately left alone: there is NO publish
+# key here, so whatever publish directory the UI is set to still applies. The
+# only thing this file adds is a build command.
+#
+# The command minifies index.html in place -- the inline CSS and all the inline
+# JS -- in Netlify's own checkout, on the way to publishing. Your source file is
+# never touched by it. Verified by running the minified page in a browser: no
+# errors, calculator still loads.
+#
+# Honest note: there is not much here worth protecting. parseMeasurement() and
+# decimalToFeetInches() are careful work, but feet-inch conversion and the US
+# survey foot are textbook. This is included for consistency, not because it
+# buys you anything.
+#
+# FIRST DEPLOY AFTER THIS LANDS: watch the deploy log. If the Netlify UI has a
+# "Base directory" set for this site, this file has to live in that directory
+# instead of the repo root, and the path below has to match.
+
+[build]
+  command = "npx --yes html-minifier-terser@7.2.0 --minify-js --minify-css --remove-comments -o index.min.html index.html && mv index.min.html index.html"
+
+# ---- Password protection (free alternative to Netlify's Pro-only feature) ----
+# Runs on every request, before anything is served. The password itself is NOT
+# here: set BASIC_AUTH_CREDENTIALS in the Netlify dashboard for this site
+# (Site configuration > Environment variables), format  username:password
+# -- space-separated for several. With that variable unset this does nothing
+# and the site stays public. See netlify/edge-functions/basic-auth.ts.
+[[edge_functions]]
+  path = "/*"
+  function = "basic-auth"
